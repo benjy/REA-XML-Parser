@@ -251,12 +251,12 @@ class REA_XML {
 				* the xml files accordingly after they've been processed
 				*/
 				if(!empty($processed_dir)) {
-					xml_processed($xml_file, $xml_full_path, $processed_dir);	
+					$this->xml_processed($xml_file, $xml_full_path, $processed_dir);	
 				}		
 			}
 			else {
 				if(!empty($failed_dir)) {
-							xml_load_failed($xml_file, $xml_full_path, $failed_dir);	
+							$this->xml_load_failed($xml_file, $xml_full_path, $failed_dir);	
 				}					
 			}
 		}

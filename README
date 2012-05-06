@@ -13,13 +13,12 @@ REA_XML allows you to easily retrieve an associative arary of properties indexed
  * business
 
 USAGE:
-<code>
+
 	$rea = new REA_XML($debug=true); //uses default fields
 	
 	$properties = $rea->parse_dir($xml_file_dir, $processed_dir, $failed_dir, $excluded_files=array());
  	
  	//or
  	$property = $rea->parse_file();
-</code>
 
 For a full list of fields please see. http://reaxml.realestate.com.au/ and click 'Mandatory Fields'

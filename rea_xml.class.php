@@ -246,6 +246,8 @@ class REA_XML {
 		$properties = array();
 		if(file_exists($xml_full_path)) {
 
+			feedback("parsing XML file $xml_file");
+
 			/* Parse the XML file */
 			$properties = $this->parse_xml(file_get_contents($xml_full_path));
 

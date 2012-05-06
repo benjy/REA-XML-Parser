@@ -268,7 +268,7 @@ class REA_XML {
 	}
 
 	/* Called if the xml file was processed */
-	function xml_processed($xml_file, $xml_full_path, $processed_dir); {
+	function xml_processed($xml_file, $xml_full_path, $processed_dir) {
 		//do anything specific to xml_processed
 
 		//move file

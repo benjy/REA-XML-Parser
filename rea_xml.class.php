@@ -181,7 +181,7 @@ class REA_XML {
 	 *
 	 * Returns an associative array of properties keyed by property type
 	 */
-	function parse_directory($xml_file_dir, $processed_dir, $failed_dir, $excluded_files=array()) {
+	function parse_directory($xml_file_dir, $processed_dir=false, $failed_dir=false, $excluded_files=array()) {
 		$properties = array();
 		if(file_exists($xml_file_dir)) {
 			if($handle = opendir($xml_file_dir)) {
@@ -191,7 +191,6 @@ class REA_XML {
 
 				/* Loop through all the files. */
 				while(false !== ($xml_file = readdir($handle))) {
-					$file_loaded = false;
 
 					/* Ensure it's not exlcuded. */
 					if(!in_array($xml_file, $this->excluded_files)) {
@@ -200,7 +199,7 @@ class REA_XML {
 						$xml_full_path = $xml_file_dir  . "/" . $xml_file;
 
 						/* retrieve the properties from this file. */
-						$prop = $this->parse_file($xml_full_path);
+						$prop = $this->parse_file($xml_full_path, $xml_file, $processed_dir, $failed_dir);
 
 						if(is_array($prop) && count($prop) > 0) {
 
@@ -222,20 +221,6 @@ class REA_XML {
 
 							//file loaded
 							$file_loaded = true;
-						}
-
-						/* If a processed/removed directory was supplied then we move
-						 * the xml files accordingly after they've been processed
-						 */
-						if($file_loaded) {
-							if(!empty($processed_dir)) {
-								xml_processed($xml_full_path, $xml_file, $processed_dir);	
-							}
-						}
-						else {
-							if(!empty($failed_dir)) {
-								xml_load_failed($xml_full_path, $xml_file, $failed_dir);	
-							}
 						}						
 					}
 				}
@@ -253,16 +238,33 @@ class REA_XML {
 	}
 
 	/* Parse a REA XML File. */
-	function parse_file($xml_file) {
+	function parse_file($xml_full_path, $xml_file, $processed_dir=false, $failed_dir=false) {
 		
-		if(file_exists($xml_file)) {
+		$properties = array();
+		if(file_exists($xml_full_path)) {
+
 			/* Parse the XML file */
-			return $this->parse_xml(file_get_contents($xml_file));
+			$properties = $this->parse_xml(file_get_contents($xml_full_path));
+
+			if(is_array($properties) && count($properties > 0)) {
+				/* If a processed/removed directory was supplied then we move
+				* the xml files accordingly after they've been processed
+				*/
+				if(!empty($processed_dir)) {
+					xml_processed($xml_file, $xml_full_path, $processed_dir);	
+				}		
+			}
+			else {
+				if(!empty($failed_dir)) {
+							xml_load_failed($xml_file, $xml_full_path, $failed_dir);	
+				}					
+			}
 		}
 		else {
 			throw new Exception("File could not be found");
 		}
-		
+
+		return $properties;
 	}
 
 	/* Called if the xml file was processed */

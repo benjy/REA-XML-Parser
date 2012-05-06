@@ -30,3 +30,4 @@ For a full list of fields please see. http://reaxml.realestate.com.au/ and click
 
 ##TODO:
  - Test with a all mandatory fields in the specification. Currenlty only the default fields have been tested.
+ - Pull filename from file path rather than supplying both

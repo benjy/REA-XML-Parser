@@ -221,6 +221,9 @@ class REA_XML {
 
 							//file loaded
 							$file_loaded = true;
+						}
+						else {
+							feedback("no properties returned from file");
 						}						
 					}
 				}
@@ -250,13 +253,25 @@ class REA_XML {
 				/* If a processed/removed directory was supplied then we move
 				* the xml files accordingly after they've been processed
 				*/
-				if(!empty($processed_dir)) {
-					$this->xml_processed($xml_file, $xml_full_path, $processed_dir);	
+				if($processed_dir !== false) {
+					if(file_exists($processed_dir)) {
+						$this->xml_processed($xml_file, $xml_full_path, $processed_dir);		
+					}
+					else {
+						feedback("Processed dir: $processed_dir does not exist");
+					}
+					
 				}		
 			}
 			else {
-				if(!empty($failed_dir)) {
-							$this->xml_load_failed($xml_file, $xml_full_path, $failed_dir);	
+				if($failed_dir !== false) {
+					if(file_exists($failed_dir)) {
+						$this->xml_load_failed($xml_file, $xml_full_path, $failed_dir);	
+					}
+					else {
+						feedback("Failed dir: $failed_dir does not exist");
+					}
+					
 				}					
 			}
 		}

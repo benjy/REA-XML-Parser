@@ -1,4 +1,41 @@
 <?php
+/**
+ *
+ * Author: Ben Dougherty
+ * URL: http://www.devblog.com.au, 
+ *	 	http://www.mandurahweb.com.au
+ *
+ * This code was written for a project by mandurahweb.com. Please give credit if you
+ * use this code in any of your projects. You can see a write-up of this code been
+ * used to create posts in WordPress here: http://www.devblog.com.au/rea-xml-parser-and-wordpress
+ *
+ * This code is licensed under with the GPL and may be used and distributed freely. 
+ * You may fork the code make changes add extra features etc.
+ *
+ * Any changes to this code should be released to the open source community.
+ *
+ *
+ * REA_XML allows you to easily retrieve an associative arary of properties
+ * indexed by propertyList. Properties types as specified in the REAXML documentation
+ * include:
+ * 		residential
+ *		rental
+ *		land
+ * 		rural
+ *		commercial
+ *		commercialLand
+ *		business
+ *
+ * USAGE:
+ * 		$rea = new REA_XML($debug=true); //uses default fields
+ *		$properties = $rea->parse_dir($xml_file_dir, $processed_dir, $failed_dir, $excluded_files=array());
+ * 
+ * or 	$property = $rea->parse_file();
+ *
+ * For a full list of fields please see. http://reaxml.realestate.com.au/ and click 'Mandatory Fields'
+ *
+ *
+ */
 class REA_XML {
 
 	/* Default Fields we return. You can specify any
@@ -44,6 +81,12 @@ class REA_XML {
 		
 	}
 
+	/*
+	 * xml_string $xml_string
+	 *
+	 * Returns an associative array of properties keyed by property type
+	 * for the XML string. XML string must be valid.
+	 */
 	function parse_xml($xml_string) {
 
 		$properties = array();
@@ -52,7 +95,18 @@ class REA_XML {
 
 		try {
 			/* Create XML document. */
-			@$xml = new SimpleXMLElement($xml_string);	
+
+			/* Some of the xml files I receive were invalid. This could be due to a number
+			 * of reasons. SimpleXMLElement still spits out some ugly errors even with the try
+			 * catch so we supress them when not in debug mode
+			 */
+			 if($this->debug) {
+				$xml = new SimpleXMLElement($xml_string);	 	
+			 }	
+			 else {
+			 	@$xml = new SimpleXMLElement($xml_string);	
+			 }		 
+			
 		}
 		catch(Exception $e) {
 			$this->feedback($e->getMessage());
@@ -118,30 +172,42 @@ class REA_XML {
 		return $properties_array;	
 	}
 
-	function parse_directory($dir, $excluded_files=array(), $property_type=false) {
+	/**
+	 * string $xml_file_dir
+	 * string $processed_dir
+	 * string $failed_dir
+	 * string[] $excluded_files
+	 *
+	 * Returns an associative array of properties keyed by property type
+	 */
+	function parse_directory($xml_file_dir, $processed_dir, $failed_dir, $excluded_files=array()) {
 		$properties = array();
-		if(file_exists($dir)) {
-			if($handle = opendir($dir)) {
+		if(file_exists($xml_file_dir)) {
+			if($handle = opendir($xml_file_dir)) {
 
 				/* Merged default excluded files with user specified files */
 				$this->excluded_files = array_merge($excluded_files, $this->default_excluded_files);
 
 				/* Loop through all the files. */
 				while(false !== ($xml_file = readdir($handle))) {
+					$file_loaded = false;
 
 					/* Ensure it's not exlcuded. */
 					if(!in_array($xml_file, $this->excluded_files)) {
 						
 						/* Get the full path */
-						$file_full_path = $dir  . "/" . $xml_file;
+						$xml_full_path = $xml_file_dir  . "/" . $xml_file;
 
-						/* retrieve the properties from
-						 * this file.
-						 */
-						$prop = $this->parse_file($file_full_path);
+						/* retrieve the properties from this file. */
+						$prop = $this->parse_file($xml_full_path);
 
 						if(is_array($prop) && count($prop) > 0) {
 
+							/* We have to get the array key which is the property
+							 * type so we can do a merge with $property[$property_type]
+							 * otherwise our properties get overwritten when we try to merge
+							 * properties of the same type which already exist.
+							 */
 							$array_key = array_keys($prop);
 							$property_type = $array_key[0];
 
@@ -152,17 +218,24 @@ class REA_XML {
 
 							/* We need the array prop because it includes the property type */
 							$properties[$property_type] = array_merge($prop[$property_type], $properties[$property_type]);
+
+							//file loaded
+							$file_loaded = true;
 						}
 
-						/*
-						if($loaded_xml) {
-							xml_processed($xml_file, $data_dir);
+						/* If a processed/removed directory was supplied then we move
+						 * the xml files accordingly after they've been processed
+						 */
+						if($file_loaded) {
+							if(!empty($processed_dir)) {
+								xml_processed($xml_full_path, $xml_file, $processed_dir);	
+							}
 						}
 						else {
-							xml_load_failed($xml_file, $data_dir);
-						}
-							*/							
-						
+							if(!empty($failed_dir)) {
+								xml_load_failed($xml_full_path, $xml_file, $failed_dir);	
+							}
+						}						
 					}
 				}
 				closedir($handle);
@@ -172,7 +245,7 @@ class REA_XML {
 			}	
 		}
 		else {
-			feedback("Directory does not exist");
+			throw new Exception("Directory could not be found");
 		}
 
 		return $properties;
@@ -191,43 +264,36 @@ class REA_XML {
 		
 	}
 
+	/* Called if the xml file was processed */
+	function xml_processed($xml_file, $xml_full_path, $processed_dir); {
+		//do anything specific to xml_processed
 
-	/* Property Types:
-	 *
-	 * residential, land, rental,
-	 * commercialLand, business. 
-	 */
-	function get_property_type($xml_string) {
-		$property_type = false;
-		$xml = false;
-		try {
-			/* Create XML document. */
-			@$xml = new SimpleXMLElement($xml_string);	
-		}
-		catch(Exception $e) {
-			$this->feedback($e->getMessage());
-		}
-
-		if($xml) {
-			/* Select the property type. */
-			$properties = $xml->xpath("/propertyList/*");
-
-			/* Ensure we have properties and Get Type */
-			if(isset($properties[0])) {
-				$property_type = $properties[0]->getName();
-			}			
-		}	
-		return $property_type;	
+		//move file
+		$this->move_file($xml_file, $xml_full_path, $processed_dir);
 	}
 
+	/* Called if the xml file was not correctly processed */
+	private function xml_load_failed($xml_file, $xml_full_path, $failed_dir) {
+		//do anything specific to xml_failed
+
+		//move file
+		$this->move_file($xml_file, $xml_full_path, $failed_dir);
+	}
+
+	/* Moves a file to a new location */
+	private function move_file($file, $file_full_path, $new_dir) {
+		if(copy($file_full_path, $new_dir . "/$file")) {
+			unlink($file_full_path);
+		}
+	}
 
 	/* Reset excluded files */
-	function reset_excluded_files() {
+	public function reset_excluded_files() {
 		$this->excluded_files = $this->default_excluded_files;
 	}
 
-	/* Display Feedback */
-	function feedback($string) {
+	/* Display Feedback if in debug mode */
+	private function feedback($string) {
 		if($this->debug) {
 			print $string . "<br/>";
 		}

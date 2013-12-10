@@ -90,87 +90,119 @@ class REA_XML {
 	 */
 	function parse_xml($xml_string) {
 
-		$properties = array();
-		$properties_array = array();
-		$xml = false;
+    	$properties = array();
+        $properties_array = array();
+        $xml = false;
 
-		try {
-			/* Create XML document. */
+        try {
+            /* Create XML document. */
 
-			/* Some of the xml files I receive were invalid. This could be due to a number
-			 * of reasons. SimpleXMLElement still spits out some ugly errors even with the try
-			 * catch so we supress them when not in debug mode
-			 */
-			 if($this->debug) {
-				$xml = new SimpleXMLElement($xml_string);	 	
-			 }	
-			 else {
-			 	@$xml = new SimpleXMLElement($xml_string);	
-			 }		 
-			
-		}
-		catch(Exception $e) {
-			$this->feedback($e->getMessage());
-		}
+            /* Some of the xml files I received were invalid. This could be due to a number
+             * of reasons. SimpleXMLElement still spits out some ugly errors even with the try
+             * catch so we supress them when not in debug mode
+             */
+            if($this->debug) {
+                $xml = new SimpleXMLElement($xml_string);
+            }
+            else {
+                @$xml = new SimpleXMLElement($xml_string);
+            }
 
-		/* Loaded the file */
-		if($xml !== false) {
+        }
+        catch(Exception $e) {
+            $this->feedback($e->getMessage());
+        }
 
-			/* Get property type */
-			$property_root = $xml->xpath("/propertyList/*");
-			if(isset($property_root[0])) {
-				$property_type = $property_root[0]->getName();	
-			}
-			
-			/* Some XML files don't even have a type and caused errors */
-			if(!empty($property_type)) {
-				/* Select the property type. */
-				$properties = $xml->xpath("/propertyList/$property_type");
-			}
-		}
+        // Loaded the file
+        if($xml === false) {
+            return array();
+        }
 
+        // Get property type.
+        $all_properties = $xml->xpath("/propertyList/*");
 
-		/* We have properties */
-		if(is_array($properties) && count($properties) > 0) {
-			foreach($properties as $property) {
-				$prop = array();//reset property
+        if(is_array($all_properties) && count($all_properties) > 0) {
+            foreach ($all_properties as $property) {
+                $property_type = $property->getName();
 
-				/* For every property we select all
-				 * the requested fields 
-				 */
-				foreach($this->fields as $key => $field) {
-					if(is_array($field)) {
-						foreach($field as $sub_field) {
-							$prop[$key][$sub_field] = $property->{$key}->{$sub_field};
-						}
-					}
-					else { /* Different handling for Images */
-						if($field == "images") {
-							foreach($property->images as $img) {
-								$attr = $img->img->attributes();
-								$prop[$field][] = $attr->url;
-							}
-						}
-						else {
-							$prop[$field] = $property->{$field};
-						}
-						
-					}
-				}
+                $prop = array();//reset property
 
-				if(in_array("status", $this->fields)) {
-					$attr = $property->attributes();
+                /* For every property we select all
+                 * the requested fields
+                 */
+                foreach($this->fields as $key => $field) {
+                    if(is_array($field)) {
+                        foreach($field as $sub_field) {
+                            $prop[$key][$sub_field] = trim((string)$property->{$key}->{$sub_field});
+                        }
+                    }
+                    else {
 
-					//save status
-					$prop['status'] = $attr->status;
-				}
+                        // Different handling for multi fields.
+                        if (isset($this->multi_fields[$field])) {
 
-				/* Save the property */
-				$properties_array[$property_type][] = $prop;
-			}
-		}	
+                            // Pull out the field key and attribute we want.
+                            $field_key = $this->multi_fields[$field]['key'];
+                            $field_attribute = $this->multi_fields[$field]['attribute'];
 
-		return $properties_array;	
+                            // Make sure the field exists.
+                            if(!is_null($property->$field->$field_key)) {
+
+                                // Get a value for every field.
+                                foreach ($property->$field->$field_key as $f) {
+
+                                    $attr = $f->attributes();
+                                    if ($attr) {
+                                        $prop[$field][(string)$attr->$field_attribute] = (string)$f;
+
+                                    }
+                                }
+                            }
+                        }
+                        elseif($field == "objects") {
+
+                            // Parse all the floorplans.
+                            if(!is_null($property->$field->floorplan)) {
+                                foreach($property->$field->floorplan as $floorplan) {
+                                    $attr = $floorplan->attributes();
+                                    if($attr) {;
+                                        $prop['floorplan_'.(string)$attr->id] = (string)$attr->url;
+                                    }
+                                }
+                            }
+                            if(!is_null($property->$field->img)) {
+                                foreach($property->$field->img as $img) {
+                                    $attr = $img->attributes();
+                                    if($attr) {
+                                        $prop['img_' . (string)$attr->id] = (string)$attr->url;
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            $prop[$field] = trim((string)$property->{$field});
+                        }
+                    }
+                }
+
+                if(in_array("status", $this->fields)) {
+                    $attr = $property->attributes();
+
+                    //save status
+                    $prop['status'] = (string)$attr->status;
+                }
+
+                // Save the property
+                if(!empty($property_type)) {
+                    $properties_array[$property_type][] = $prop;
+                }
+                else {
+                    $properties_array['INVALID_PROPERTY_TYPE'][] = $prop;
+                }
+            }
+        }
+
+        return $properties_array;
 	}
 
 	/**

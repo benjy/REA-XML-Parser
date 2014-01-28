@@ -255,14 +255,14 @@ class REA_XML {
 							$file_loaded = true;
 						}
 						else {
-							this->feedback("no properties returned from file");
+							$this->feedback("no properties returned from file");
 						}						
 					}
 				}
 				closedir($handle);
 			}
 			else {
-				this->feedback("Could not open directory");
+				$this->feedback("Could not open directory");
 			}	
 		}
 		else {
@@ -278,7 +278,7 @@ class REA_XML {
 		$properties = array();
 		if(file_exists($xml_full_path)) {
 
-			this->feedback("parsing XML file $xml_file");
+			$this->feedback("parsing XML file $xml_file");
 
 			/* Parse the XML file */
 			$properties = $this->parse_xml(file_get_contents($xml_full_path));
@@ -292,7 +292,7 @@ class REA_XML {
 						$this->xml_processed($xml_file, $xml_full_path, $processed_dir);		
 					}
 					else {
-						this->feedback("Processed dir: $processed_dir does not exist");
+						$this->feedback("Processed dir: $processed_dir does not exist");
 					}
 					
 				}		
@@ -303,7 +303,7 @@ class REA_XML {
 						$this->xml_load_failed($xml_file, $xml_full_path, $failed_dir);	
 					}
 					else {
-						this->feedback("Failed dir: $failed_dir does not exist");
+						$this->feedback("Failed dir: $failed_dir does not exist");
 					}
 					
 				}					

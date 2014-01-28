@@ -159,7 +159,7 @@ class REA_XML {
                                 }
                             }
                         }
-                        elseif($field == "objects") {
+                        elseif($field == "objects" || $field == "images") {
 
                             // Parse all the floorplans.
                             if(!is_null($property->$field->floorplan)) {

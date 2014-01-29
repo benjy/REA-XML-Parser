@@ -10,11 +10,11 @@ This code allows you to easily retrieve an associative arary of properties index
  * commercialLand
  * business
 
-##Credit:
- - This code was written for a project by mandurahweb.com. Please give credit if you use this code in any of your projects. You can see a write-up of this code been used to create posts in WordPress here: http://www.devblog.com.au/rea-xml-parser-and-wordpress
+##Further Reading:
+ - You can see a write-up of this code been used to create posts in WordPress here: http://www.devblog.com.au/rea-xml-parser-and-wordpress
 
 ##License: 
- - This code is licensed under with the GPL and may be used and distributed freely. You may fork the code make changes add extra features etc. Any changes to this code should be released to the open source community.
+ - This code is licensed under GPL and may be used and distributed freely. You may fork the code make changes add extra features etc. Any changes to this code should be released to the open source community.
 
 
 
@@ -27,7 +27,3 @@ This code allows you to easily retrieve an associative arary of properties index
  		$property = $rea->parse_file();
 
 For a full list of fields please see. http://reaxml.realestate.com.au/ and click 'Mandatory Fields'
-
-##TODO:
- - Test with a all mandatory fields in the specification. Currenlty only the default fields have been tested.
- - Pull filename from file path rather than supplying both

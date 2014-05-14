@@ -1,6 +1,6 @@
 #REA XML Parser
 
-This code allows you to easily retrieve an associative arary of properties indexed by property type. Properties types as specified in the REAXML documentation include:
+This code allows you to easily retrieve an associative arary of properties indexed by property type. Property types as specified in the REAXML documentation include:
  
  * residential
  * rental
